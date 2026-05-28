@@ -7,5 +7,8 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "build": "npm run build --prefix frontend",
     "start:backend": "npm run start --prefix backend"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
   }
 }
