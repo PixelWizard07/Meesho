@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ShoppingBag, Package, TrendingUp, Users,
   RefreshCw, Clock, CheckCircle, XCircle, AlertCircle, PlusCircle,
-  Wifi, WifiOff,
+  Wifi, WifiOff, RotateCcw,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
@@ -146,6 +146,13 @@ export default function DashboardPage() {
         <StatCard icon={TrendingUp} label="Total Revenue" value={data ? fmt(data.total_revenue) : '—'} color="green" loading={loading} />
         <StatCard icon={Package} label="Active Products" value={data?.active_products ?? 0} color="yellow" loading={loading} />
       </div>
+      {(data?.open_returns ?? 0) > 0 && (
+        <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
+          <RotateCcw size={16} className="text-orange-400 shrink-0"/>
+          <p className="text-sm text-orange-300"><span className="font-bold">{data.open_returns}</span> open return{data.open_returns !== 1 ? 's' : ''} need your attention</p>
+          <a href="/returns" className="ml-auto text-xs text-orange-400 hover:text-orange-300 underline whitespace-nowrap">View Returns</a>
+        </div>
+      )}
 
       {/* No accounts state */}
       {!loading && data?.total_accounts === 0 && (

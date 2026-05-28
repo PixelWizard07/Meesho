@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Search, RefreshCw, Package, Star, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, RefreshCw, Package, Star, Edit2, ChevronUp, ChevronDown, ToggleLeft, ToggleRight } from 'lucide-react';
 import { productsAPI, accountsAPI } from '../api/api';
 import toast from 'react-hot-toast';
 
@@ -196,14 +196,25 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex gap-2 mt-3">
-                <span className={`badge flex-1 justify-center ${product.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
+                <button
+                  onClick={async () => {
+                    const newStatus = product.status === 'active' ? 'inactive' : 'active';
+                    try {
+                      await productsAPI.toggle(product.product_id, { account_id: product.account_id, status: newStatus });
+                      toast.success(`Product ${newStatus}`);
+                      fetchProducts();
+                    } catch { toast.error('Failed to toggle product'); }
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${product.status === 'active' ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
+                >
+                  {product.status === 'active' ? <ToggleRight size={13}/> : <ToggleLeft size={13}/>}
                   {product.status}
-                </span>
+                </button>
                 <button
                   onClick={() => setEditInventory(product)}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 rounded-md text-xs transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 rounded-md text-xs transition-colors ml-auto"
                 >
-                  <Edit2 size={11} /> Stock
+                  <Edit2 size={11}/> Stock
                 </button>
               </div>
             </div>

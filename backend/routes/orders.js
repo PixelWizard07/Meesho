@@ -1,172 +1,181 @@
 const express = require('express');
-const db = require('../db/database');
+const db      = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
-const { getMockDashboardData } = require('../services/meesho');
-const { MeeshoLiveAPI } = require('../services/meeshoAuth');
+const { MeeshoAPI }         = require('../services/meeshoAuth');
+const { getOrders }         = require('../services/mockData');
 
 const router = express.Router();
 
-function formatStatus(raw) {
-  if (!raw) return 'Pending';
-  const map = {
-    ORDER_PLACED: 'Pending', ACCEPTED: 'Accepted', DISPATCHED: 'Dispatched',
-    DELIVERED: 'Delivered', CANCELLED: 'Cancelled', RETURNED: 'Cancelled',
-    pending: 'Pending', accepted: 'Accepted', dispatched: 'Dispatched',
-    delivered: 'Delivered', cancelled: 'Cancelled',
-  };
-  return map[raw] || raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+function getAccountRows(userId, accountId) {
+  if (accountId) return db.prepare(`SELECT * FROM meesho_accounts WHERE panel_user_id=? AND status='active' AND id=?`).all(userId, accountId);
+  return db.prepare(`SELECT * FROM meesho_accounts WHERE panel_user_id=? AND status='active'`).all(userId);
 }
-
-function normalise(o, account) {
+function liveAPI(a) { return a.session_token && a.login_status==='connected' ? new MeeshoAPI(a.session_token, a.session_cookies) : null; }
+function fmtStatus(s) {
+  if (!s) return 'Pending';
+  const m={ORDER_PLACED:'Pending',ACCEPTED:'Accepted',LABEL_GENERATED:'Label Generated',DISPATCHED:'Dispatched',DELIVERED:'Delivered',CANCELLED:'Cancelled',pending:'Pending',accepted:'Accepted',dispatched:'Dispatched',delivered:'Delivered',cancelled:'Cancelled'};
+  return m[s]||(s.charAt(0).toUpperCase()+s.slice(1).toLowerCase());
+}
+function norm(o, a) {
   return {
-    order_id:      o.order_id     || o.id || String(o.sub_order_id || ''),
-    product_name:  o.product_name || o.catalog_name || o.name || 'Product',
-    customer_name: o.customer_name|| o.receiver_name || 'Customer',
-    customer_city: o.customer_city|| o.city || '',
-    amount:        Number(o.price || o.amount || o.order_amount || 0),
-    status:        formatStatus(o.status || o.sub_status),
-    order_date:    o.order_date   || o.created_at || new Date().toISOString(),
-    quantity:      o.quantity     || 1,
-    account_id:    account.id,
-    account_name:  account.account_name,
-    store_name:    account.store_name,
+    order_id      : o.order_id||o.id||String(o.sub_order_id||''),
+    sub_order_id  : o.sub_order_id||o.order_id||String(o.id||''),
+    product_name  : o.product_name||o.catalog_name||o.name||'Product',
+    sku           : o.sku||'',
+    category      : o.category||'',
+    customer_name : o.customer_name||o.receiver_name||'Customer',
+    customer_city : o.customer_city||o.city||'',
+    customer_state: o.customer_state||o.state||'',
+    customer_phone: o.customer_phone||o.phone||'',
+    address       : o.address||'',
+    pincode       : o.pincode||'',
+    amount        : Number(o.price||o.amount||o.order_amount||0),
+    quantity      : o.quantity||1,
+    status        : fmtStatus(o.status||o.sub_status),
+    courier       : o.courier||o.courier_name||'',
+    tracking_id   : o.tracking_id||o.awb||null,
+    label_url     : o.label_url||null,
+    order_date    : o.order_date||o.created_at||new Date().toISOString(),
+    account_id    : a.id, account_name: a.account_name, store_name: a.store_name,
   };
 }
-
-async function fetchOrdersForAccount(account, params = {}) {
-  if (account.session_token && account.login_status === 'connected') {
-    const api = new MeeshoLiveAPI(account.session_token, account.session_cookies);
-    const res = await api.getOrders(params);
-    if (res.success) {
-      const raw = res.data?.data || res.data?.orders || res.data || [];
-      return { orders: raw.map(o => normalise(o, account)), live: true };
-    }
-    if (res.expired) {
-      db.prepare(`UPDATE meesho_accounts SET login_status = 'expired' WHERE id = ?`).run(account.id);
-    }
+async function fetchOrders(a, params={}) {
+  const m = liveAPI(a);
+  if (m) {
+    const r = await m.getOrders(params);
+    if (r.success) return (r.data?.data||r.data?.orders||[]).map(o=>norm(o,a));
+    if (r.expired) db.prepare("UPDATE meesho_accounts SET login_status='expired' WHERE id=?").run(a.id);
   }
-
-  // Fallback: cached DB rows
-  const cached = db.prepare(
-    'SELECT order_data FROM cached_orders WHERE account_id = ? ORDER BY order_date DESC'
-  ).all(account.id).map(r => JSON.parse(r.order_data));
-
-  if (cached.length) {
-    return { orders: cached.map(o => normalise(o, account)), live: false };
-  }
-
-  // Last resort: demo data
-  const mock = getMockDashboardData(account.id);
-  return { orders: mock.orders.map(o => ({ ...o, account_id: account.id, account_name: account.account_name, store_name: account.store_name })), live: false };
+  // cached
+  const cached = db.prepare('SELECT order_data FROM cached_orders WHERE account_id=? ORDER BY order_date DESC').all(a.id).map(r=>JSON.parse(r.order_data));
+  if (cached.length) return cached;
+  return getOrders(a.id).map(o=>({...o, account_id:a.id, account_name:a.account_name, store_name:a.store_name}));
 }
 
-// GET /api/orders/all  – across all accounts (or filtered by account_id)
+/* ── GET /api/orders/all ─── */
 router.get('/all', authenticateToken, async (req, res) => {
-  const { status, page = 1, limit = 20, account_id, search } = req.query;
+  const { status, page=1, limit=20, account_id, search } = req.query;
+  const accounts = getAccountRows(req.user.id, account_id);
+  let all = [];
+  for (const a of accounts) { const o = await fetchOrders(a); all.push(...o); }
 
-  const query = account_id
-    ? "SELECT * FROM meesho_accounts WHERE panel_user_id = ? AND status = 'active' AND id = ?"
-    : "SELECT * FROM meesho_accounts WHERE panel_user_id = ? AND status = 'active'";
-  const args = account_id ? [req.user.id, account_id] : [req.user.id];
-  const accounts = db.prepare(query).all(...args);
-
-  let allOrders = [];
-  for (const account of accounts) {
-    const { orders } = await fetchOrdersForAccount(account);
-    allOrders.push(...orders);
-  }
-
-  if (status && status !== 'all') {
-    allOrders = allOrders.filter(o => o.status.toLowerCase() === status.toLowerCase());
-  }
-  if (search) {
-    const q = search.toLowerCase();
-    allOrders = allOrders.filter(o =>
-      o.order_id.toLowerCase().includes(q) ||
-      o.product_name.toLowerCase().includes(q) ||
-      o.customer_name.toLowerCase().includes(q)
-    );
-  }
-
-  allOrders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
-
-  const total = allOrders.length;
-  const start = (Number(page) - 1) * Number(limit);
-  res.json({ orders: allOrders.slice(start, start + Number(limit)), total, page: Number(page), limit: Number(limit) });
+  if (status && status!=='all') all = all.filter(o=>o.status.toLowerCase()===status.toLowerCase());
+  if (search) { const q=search.toLowerCase(); all=all.filter(o=>o.order_id.toLowerCase().includes(q)||o.product_name.toLowerCase().includes(q)||o.customer_name.toLowerCase().includes(q)); }
+  all.sort((a,b)=>new Date(b.order_date)-new Date(a.order_date));
+  const total=all.length, start=(Number(page)-1)*Number(limit);
+  res.json({ orders: all.slice(start,start+Number(limit)), total, page:Number(page), limit:Number(limit) });
 });
 
-// GET /api/orders/account/:accountId
+/* ── GET /api/orders/account/:accountId ─── */
 router.get('/account/:accountId', authenticateToken, async (req, res) => {
-  const account = db.prepare(
-    'SELECT * FROM meesho_accounts WHERE id = ? AND panel_user_id = ?'
-  ).get(req.params.accountId, req.user.id);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
-
-  const { status, page = 1, limit = 20 } = req.query;
-  const { orders, live } = await fetchOrdersForAccount(account);
-
-  let filtered = orders;
-  if (status && status !== 'all') filtered = filtered.filter(o => o.status.toLowerCase() === status.toLowerCase());
-
-  const total = filtered.length;
-  const start = (Number(page) - 1) * Number(limit);
-  res.json({ orders: filtered.slice(start, start + Number(limit)), total, page: Number(page), limit: Number(limit), live });
+  const a = db.prepare('SELECT * FROM meesho_accounts WHERE id=? AND panel_user_id=?').get(req.params.accountId, req.user.id);
+  if (!a) return res.status(404).json({ error:'Account not found' });
+  const { status, page=1, limit=20 } = req.query;
+  let orders = await fetchOrders(a);
+  if (status&&status!=='all') orders=orders.filter(o=>o.status.toLowerCase()===status.toLowerCase());
+  const total=orders.length, start=(Number(page)-1)*Number(limit);
+  res.json({ orders:orders.slice(start,start+Number(limit)), total, page:Number(page), limit:Number(limit) });
 });
 
-// POST /api/orders/:orderId/status  – accept / cancel / dispatch
-router.post('/:orderId/status', authenticateToken, async (req, res) => {
-  const { account_id, status } = req.body;
-  if (!account_id || !status) return res.status(400).json({ error: 'account_id and status required' });
+/* ── Accept order ─── */
+router.post('/:subOrderId/accept', authenticateToken, async (req, res) => {
+  const { account_id } = req.body;
+  const a = db.prepare('SELECT * FROM meesho_accounts WHERE id=? AND panel_user_id=?').get(account_id, req.user.id);
+  if (!a) return res.status(404).json({ error:'Account not found' });
+  const m = liveAPI(a);
+  let live=false, msg='Order accepted';
+  if (m) { const r=await m.acceptOrder(req.params.subOrderId); if(r.success) live=true; else msg+=` (cached only)`; }
+  db.prepare(`UPDATE cached_orders SET order_data=json_set(order_data,'$.status','Accepted') WHERE account_id=? AND order_id=?`).run(account_id, req.params.subOrderId);
+  db.prepare(`INSERT INTO activity_logs(panel_user_id,account_id,action,details) VALUES(?,?,'order_accepted',?)`).run(req.user.id,account_id,req.params.subOrderId);
+  res.json({ message:msg, live });
+});
 
-  const account = db.prepare(
-    'SELECT * FROM meesho_accounts WHERE id = ? AND panel_user_id = ?'
-  ).get(account_id, req.user.id);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
+/* ── Cancel / reject order ─── */
+router.post('/:subOrderId/cancel', authenticateToken, async (req, res) => {
+  const { account_id, reason='' } = req.body;
+  const a = db.prepare('SELECT * FROM meesho_accounts WHERE id=? AND panel_user_id=?').get(account_id, req.user.id);
+  if (!a) return res.status(404).json({ error:'Account not found' });
+  const m = liveAPI(a);
+  let live=false;
+  if (m) { const r=await m.cancelOrder(req.params.subOrderId, reason); if(r.success) live=true; }
+  db.prepare(`UPDATE cached_orders SET order_data=json_set(order_data,'$.status','Cancelled') WHERE account_id=? AND order_id=?`).run(account_id, req.params.subOrderId);
+  db.prepare(`INSERT INTO activity_logs(panel_user_id,account_id,action,details) VALUES(?,?,'order_cancelled',?)`).run(req.user.id,account_id,JSON.stringify({id:req.params.subOrderId,reason}));
+  res.json({ message:'Order cancelled', live });
+});
 
-  let message = `Order ${req.params.orderId} marked as ${status}`;
-  let live = false;
+/* ── Mark dispatched ─── */
+router.post('/:subOrderId/dispatch', authenticateToken, async (req, res) => {
+  const { account_id, tracking_id, courier } = req.body;
+  const a = db.prepare('SELECT * FROM meesho_accounts WHERE id=? AND panel_user_id=?').get(account_id, req.user.id);
+  if (!a) return res.status(404).json({ error:'Account not found' });
+  const m = liveAPI(a);
+  let live=false;
+  if (m) { const r=await m.dispatchOrder(req.params.subOrderId,{tracking_id,courier}); if(r.success) live=true; }
+  db.prepare(`UPDATE cached_orders SET order_data=json_set(json_set(json_set(order_data,'$.status','Dispatched'),'$.tracking_id',?),'$.courier',?) WHERE account_id=? AND order_id=?`).run(tracking_id||'',courier||'',account_id,req.params.subOrderId);
+  res.json({ message:'Order dispatched', live });
+});
 
-  if (account.session_token && account.login_status === 'connected') {
-    const api = new MeeshoLiveAPI(account.session_token, account.session_cookies);
-    const result = await api.updateOrderStatus(req.params.orderId, status);
-    if (result.success) {
-      live = true;
-    } else {
-      message += ' (local only – live update failed)';
+/* ── Download / generate shipping label ─── */
+router.get('/:subOrderId/label', authenticateToken, async (req, res) => {
+  const { account_id } = req.query;
+  const a = db.prepare('SELECT * FROM meesho_accounts WHERE id=? AND panel_user_id=?').get(account_id, req.user.id);
+  if (!a) return res.status(404).json({ error:'Account not found' });
+  const m = liveAPI(a);
+  if (m) {
+    const r = await m.getLabel(req.params.subOrderId);
+    if (r.success) {
+      res.setHeader('Content-Type', r.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="label_${req.params.subOrderId}.pdf"`);
+      return res.send(Buffer.from(r.data));
     }
   }
-
-  // Update cached status regardless
-  db.prepare(`
-    UPDATE cached_orders
-    SET order_data = json_set(order_data, '$.status', ?)
-    WHERE account_id = ? AND order_id = ?
-  `).run(status, account_id, req.params.orderId);
-
-  db.prepare(`
-    INSERT INTO activity_logs (panel_user_id, account_id, action, details)
-    VALUES (?, ?, 'order_status_updated', ?)
-  `).run(req.user.id, account_id, JSON.stringify({ order_id: req.params.orderId, status }));
-
-  res.json({ message, live });
+  // Generate a simple demo label PDF using plain HTML→text
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Content-Disposition', `attachment; filename="label_${req.params.subOrderId}.html"`);
+  const order = db.prepare(`SELECT json_extract(order_data,'$.product_name') AS name, json_extract(order_data,'$.customer_name') AS cname, json_extract(order_data,'$.address') AS addr, json_extract(order_data,'$.pincode') AS pin, json_extract(order_data,'$.tracking_id') AS track, json_extract(order_data,'$.courier') AS courier FROM cached_orders WHERE account_id=? AND order_id=?`).get(account_id, req.params.subOrderId) || {};
+  res.send(generateLabelHTML(req.params.subOrderId, order, a));
 });
 
-// GET /api/orders/stats
-router.get('/stats', authenticateToken, async (req, res) => {
-  const accounts = db.prepare(
-    "SELECT * FROM meesho_accounts WHERE panel_user_id = ? AND status = 'active'"
-  ).all(req.user.id);
-
-  const stats = [];
-  for (const account of accounts) {
-    const { orders } = await fetchOrdersForAccount(account);
-    const counts = orders.reduce((acc, o) => {
-      acc[o.status] = (acc[o.status] || 0) + 1;
-      return acc;
-    }, {});
-    stats.push({ account_id: account.id, account_name: account.account_name, store_name: account.store_name, status_counts: counts, total: orders.length });
-  }
-  res.json(stats);
-});
+function generateLabelHTML(orderId, order, account) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff}
+    .label{border:2px solid #000;padding:20px;max-width:400px;margin:auto}
+    .logo{font-size:24px;font-weight:bold;color:#f43397;text-align:center;margin-bottom:16px}
+    .section{margin:12px 0;border-top:1px solid #ddd;padding-top:12px}
+    .row{display:flex;justify-content:space-between;margin:4px 0;font-size:13px}
+    .label-title{font-weight:bold;font-size:11px;color:#666;text-transform:uppercase}
+    .barcode{text-align:center;font-size:28px;letter-spacing:8px;margin:16px 0;font-family:monospace}
+    h3{margin:0 0 8px;font-size:14px}
+    @media print{body{margin:0}}
+  </style></head><body>
+  <div class="label">
+    <div class="logo">meesho</div>
+    <div class="section">
+      <div class="label-title">Order ID</div>
+      <h3>${orderId}</h3>
+      <div class="barcode">||| ${orderId} |||</div>
+    </div>
+    <div class="section">
+      <div class="label-title">Ship To</div>
+      <div style="font-size:14px;font-weight:bold">${order.cname||'Customer'}</div>
+      <div style="font-size:12px;margin-top:4px">${order.addr||'Address not available'}</div>
+      <div style="font-size:12px">PIN: <strong>${order.pin||'—'}</strong></div>
+    </div>
+    <div class="section">
+      <div class="row"><span class="label-title">Product</span><span style="font-size:12px;text-align:right;max-width:60%">${order.name||'—'}</span></div>
+      <div class="row"><span class="label-title">Courier</span><span>${order.courier||'—'}</span></div>
+      <div class="row"><span class="label-title">Tracking ID</span><span>${order.track||'—'}</span></div>
+      <div class="row"><span class="label-title">Seller</span><span>${account.store_name||account.account_name}</span></div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#999;margin-top:16px">
+      Generated by Meesho Multi-Account Panel · ${new Date().toLocaleString('en-IN')}
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px">
+    <button onclick="window.print()" style="background:#f43397;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer">Print Label</button>
+  </div>
+</body></html>`;
+}
 
 module.exports = router;

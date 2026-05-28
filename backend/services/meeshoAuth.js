@@ -1,229 +1,137 @@
 /**
- * Meesho Supplier Panel authentication service.
- * Handles OTP-based login, session management, and real API calls.
- *
- * Meesho supplier panel: https://supplier.meesho.com
- * Internal API base:      https://supplier-app-api.meesho.com
+ * Meesho Supplier Panel — authentication & live API service.
+ * Primary login: email + password (no OTP required).
+ * All calls target https://supplier-app-api.meesho.com
  */
-
 const axios = require('axios');
 const { CookieJar } = require('tough-cookie');
 const { wrapper } = require('axios-cookiejar-support');
 
-const SUPPLIER_API = 'https://supplier-app-api.meesho.com';
-const SUPPLIER_WEB  = 'https://supplier.meesho.com';
+const BASE   = 'https://supplier-app-api.meesho.com';
+const ORIGIN = 'https://supplier.meesho.com';
 
-const BASE_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 Chrome/112.0 Mobile Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-  'Accept-Language': 'en-IN,en;q=0.9',
-  'Origin': SUPPLIER_WEB,
-  'Referer': `${SUPPLIER_WEB}/`,
-  'Content-Type': 'application/json',
-  'x-app-source': 'supplier-web',
+const HEADERS = {
+  'User-Agent'      : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+  'Accept'          : 'application/json, text/plain, */*',
+  'Accept-Language' : 'en-IN,en;q=0.9',
+  'Origin'          : ORIGIN,
+  'Referer'         : `${ORIGIN}/`,
+  'Content-Type'    : 'application/json',
+  'x-app-source'    : 'supplier-web',
+  'x-platform'      : 'web',
 };
 
-function buildClient(cookieJar, authToken) {
-  const jar = cookieJar || new CookieJar();
-  const headers = { ...BASE_HEADERS };
-  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-
+function makeClient(jar, token) {
+  const h = { ...HEADERS };
+  if (token) h['Authorization'] = `Bearer ${token}`;
   return wrapper(axios.create({
-    baseURL: SUPPLIER_API,
-    jar,
-    withCredentials: true,
-    timeout: 20000,
-    headers,
+    baseURL: BASE, jar: jar || new CookieJar(),
+    withCredentials: true, timeout: 20000, headers: h,
   }));
 }
 
-/**
- * Step 1: Request OTP for a phone number.
- * Returns { success, message, data }
- */
-async function requestOTP(phone) {
-  try {
-    const client = buildClient();
-    const res = await client.post('/api/v1/supply/auth/send-otp', {
-      phone_number: phone.replace(/\D/g, ''),
-    });
-    return { success: true, message: 'OTP sent', data: res.data };
-  } catch (err) {
-    const msg = err.response?.data?.message || err.message;
-    return { success: false, message: msg, status: err.response?.status };
-  }
-}
-
-/**
- * Step 2: Verify OTP and get session token.
- * Returns { success, token, supplierId, storeName, cookieString }
- */
-async function verifyOTP(phone, otp) {
-  try {
-    const jar = new CookieJar();
-    const client = buildClient(jar);
-    const res = await client.post('/api/v1/supply/auth/verify-otp', {
-      phone_number: phone.replace(/\D/g, ''),
-      otp: String(otp),
-    });
-
-    const data = res.data;
-
-    // Extract token from response body or Authorization header
-    const token =
-      data?.data?.token ||
-      data?.token ||
-      data?.access_token ||
-      res.headers['authorization']?.replace('Bearer ', '') ||
-      null;
-
-    const supplierId =
-      data?.data?.supplier_id ||
-      data?.supplier_id ||
-      data?.data?.id ||
-      null;
-
-    const storeName =
-      data?.data?.store_name ||
-      data?.data?.business_name ||
-      data?.store_name ||
-      null;
-
-    const cookieString = await jar.getCookiesSync(SUPPLIER_API)
-      .map(c => `${c.key}=${c.value}`)
-      .join('; ');
-
-    return {
-      success: true,
-      token,
-      supplierId: String(supplierId || ''),
-      storeName,
-      cookieString,
-    };
-  } catch (err) {
-    const msg = err.response?.data?.message || err.message;
-    return { success: false, message: msg, status: err.response?.status };
-  }
-}
-
-/**
- * Login with email + password (some supplier accounts support this).
- */
+/* ─── Login with email + password ─────────────────────────────────────── */
 async function loginWithPassword(email, password) {
+  const jar    = new CookieJar();
+  const client = makeClient(jar);
   try {
-    const jar = new CookieJar();
-    const client = buildClient(jar);
-    const res = await client.post('/api/v1/supply/auth/login', {
-      email,
-      password,
-    });
-
-    const data = res.data;
-    const token =
-      data?.data?.token ||
-      data?.token ||
-      data?.access_token ||
-      res.headers['authorization']?.replace('Bearer ', '') ||
-      null;
-
-    const supplierId = data?.data?.supplier_id || data?.supplier_id || null;
-    const storeName  = data?.data?.store_name  || data?.store_name  || null;
-
-    const cookieString = await jar.getCookiesSync(SUPPLIER_API)
-      .map(c => `${c.key}=${c.value}`)
-      .join('; ');
-
-    return {
-      success: true,
-      token,
-      supplierId: String(supplierId || ''),
-      storeName,
-      cookieString,
-    };
+    // Meesho supplier panel login endpoint
+    const res = await client.post('/api/v1/supply/auth/supplier-login', { email, password });
+    return extractSession(res, jar);
   } catch (err) {
-    const msg = err.response?.data?.message || err.message;
-    return { success: false, message: msg, status: err.response?.status };
+    // Fallback endpoint variation
+    try {
+      const res2 = await client.post('/api/v1/supply/auth/login', { email, password });
+      return extractSession(res2, jar);
+    } catch (err2) {
+      return { success: false, message: err2.response?.data?.message || err2.message, status: err2.response?.status };
+    }
   }
 }
 
-/**
- * Fetch live data from Meesho using a stored session token.
- */
-class MeeshoLiveAPI {
-  constructor(token, cookieString) {
+function extractSession(res, jar) {
+  const d = res.data;
+  const token =
+    d?.data?.token       || d?.token        || d?.access_token ||
+    d?.data?.access_token|| d?.data?.jwt    ||
+    res.headers['authorization']?.replace('Bearer ', '') || null;
+
+  const supplier =
+    d?.data?.supplier    || d?.supplier     || d?.data || {};
+
+  const cookies = jar.getCookiesSync(BASE).map(c => `${c.key}=${c.value}`).join('; ');
+
+  return {
+    success    : true,
+    token,
+    cookies,
+    supplierId : String(supplier.supplier_id || supplier.id || ''),
+    storeName  : supplier.store_name || supplier.business_name || supplier.name || '',
+    email      : supplier.email || '',
+    phone      : supplier.phone_number || supplier.phone || '',
+  };
+}
+
+/* ─── Live API wrapper ─────────────────────────────────────────────────── */
+class MeeshoAPI {
+  constructor(token, cookies) {
     const jar = new CookieJar();
-    if (cookieString) {
-      cookieString.split(';').forEach(pair => {
-        const [key, ...rest] = pair.trim().split('=');
-        if (key) jar.setCookieSync(`${key}=${rest.join('=')}`, SUPPLIER_API);
+    if (cookies) cookies.split(';').forEach(pair => {
+      const [k, ...v] = pair.trim().split('=');
+      if (k) try { jar.setCookieSync(`${k}=${v.join('=')}`, BASE); } catch {}
+    });
+    this.client = makeClient(jar, token);
+  }
+
+  /* Orders */
+  async getOrders(params = {})          { return this._get('/api/v1/supply/orders', params); }
+  async acceptOrder(subOrderId)         { return this._post(`/api/v1/supply/orders/${subOrderId}/accept`); }
+  async cancelOrder(subOrderId, reason) { return this._post(`/api/v1/supply/orders/${subOrderId}/cancel`, { reason }); }
+  async dispatchOrder(subOrderId, data) { return this._post(`/api/v1/supply/orders/${subOrderId}/dispatch`, data); }
+
+  /* Label — returns raw buffer (PDF) */
+  async getLabel(subOrderId) {
+    try {
+      const res = await this.client.get(`/api/v1/supply/orders/${subOrderId}/manifest`, {
+        responseType: 'arraybuffer',
       });
-    }
-    this.client = buildClient(jar, token);
+      return { success: true, data: res.data, contentType: res.headers['content-type'] || 'application/pdf' };
+    } catch (err) { return this._err(err); }
   }
 
-  async getOrders(params = {}) {
-    try {
-      const res = await this.client.get('/api/v1/supply/orders', { params });
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
-  }
+  /* Returns */
+  async getReturns(params = {})         { return this._get('/api/v1/supply/returns', params); }
+  async getReturnOTP(returnId)          { return this._get(`/api/v1/supply/returns/${returnId}/otp`); }
+  async acceptReturn(returnId)          { return this._post(`/api/v1/supply/returns/${returnId}/accept`); }
+  async rejectReturn(returnId, reason)  { return this._post(`/api/v1/supply/returns/${returnId}/reject`, { reason }); }
 
-  async updateOrderStatus(orderId, status) {
-    try {
-      const res = await this.client.post(`/api/v1/supply/orders/${orderId}/status`, { status });
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
-  }
+  /* Payments */
+  async getPayments(params = {})        { return this._get('/api/v1/supply/payments/settlements', params); }
+  async getEarnings()                   { return this._get('/api/v1/supply/payments/earnings'); }
 
-  async getProducts(params = {}) {
-    try {
-      const res = await this.client.get('/api/v1/supply/catalog', { params });
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
-  }
+  /* Products */
+  async getProducts(params = {})        { return this._get('/api/v1/supply/catalog/products', params); }
+  async updateInventory(catalogId, qty) { return this._put(`/api/v1/supply/catalog/${catalogId}/inventory`, { quantity: qty }); }
+  async toggleProduct(catalogId, active){ return this._put(`/api/v1/supply/catalog/${catalogId}/status`, { is_active: active }); }
 
-  async updateInventory(productId, quantity) {
-    try {
-      const res = await this.client.put(`/api/v1/supply/catalog/${productId}/inventory`, { quantity });
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
-  }
+  /* Profile */
+  async getProfile()                    { return this._get('/api/v1/supply/supplier/profile'); }
 
-  async getProfile() {
-    try {
-      const res = await this.client.get('/api/v1/supply/supplier/profile');
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
+  async _get(url, params)  {
+    try { const r = await this.client.get(url, { params }); return { success: true, data: r.data }; }
+    catch(e) { return this._err(e); }
   }
-
-  async getPayments(params = {}) {
-    try {
-      const res = await this.client.get('/api/v1/supply/payments', { params });
-      return { success: true, data: res.data };
-    } catch (err) {
-      return this._error(err);
-    }
+  async _post(url, body)  {
+    try { const r = await this.client.post(url, body || {}); return { success: true, data: r.data }; }
+    catch(e) { return this._err(e); }
   }
-
-  _error(err) {
-    const isExpired = err.response?.status === 401 || err.response?.status === 403;
-    return {
-      success: false,
-      expired: isExpired,
-      message: err.response?.data?.message || err.message,
-      status: err.response?.status,
-    };
+  async _put(url, body)   {
+    try { const r = await this.client.put(url, body); return { success: true, data: r.data }; }
+    catch(e) { return this._err(e); }
+  }
+  _err(e) {
+    return { success: false, expired: e.response?.status === 401, message: e.response?.data?.message || e.message, status: e.response?.status };
   }
 }
 
-module.exports = { requestOTP, verifyOTP, loginWithPassword, MeeshoLiveAPI };
+module.exports = { loginWithPassword, MeeshoAPI };

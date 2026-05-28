@@ -1,66 +1,64 @@
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: '/api',
-  headers: { 'Content-Type': 'application/json' },
-});
+const api = axios.create({ baseURL: '/api', headers: { 'Content-Type': 'application/json' } });
 
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('panel_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+api.interceptors.request.use(cfg => {
+  const t = localStorage.getItem('panel_token');
+  if (t) cfg.headers.Authorization = `Bearer ${t}`;
+  return cfg;
 });
-
-api.interceptors.response.use(
-  res => res,
-  err => {
-    if (err.response?.status === 401 || err.response?.status === 403) {
-      localStorage.removeItem('panel_token');
-      localStorage.removeItem('panel_user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(err);
+api.interceptors.response.use(r => r, err => {
+  if (err.response?.status === 401 || err.response?.status === 403) {
+    localStorage.removeItem('panel_token');
+    localStorage.removeItem('panel_user');
+    window.location.href = '/login';
   }
-);
+  return Promise.reject(err);
+});
 
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  me: () => api.get('/auth/me'),
-  changePassword: (data) => api.post('/auth/change-password', data),
+  login          : d  => api.post('/auth/login', d),
+  me             : () => api.get('/auth/me'),
+  changePassword : d  => api.post('/auth/change-password', d),
 };
 
 export const accountsAPI = {
-  list: () => api.get('/accounts'),
-  add: (data) => api.post('/accounts', data),
-  get: (id) => api.get(`/accounts/${id}`),
-  update: (id, data) => api.put(`/accounts/${id}`, data),
-  delete: (id) => api.delete(`/accounts/${id}`),
-  getDashboard: (id) => api.get(`/accounts/${id}/dashboard`),
-  getAggregate: () => api.get('/accounts/aggregate/dashboard'),
-  // Meesho credential-based login
-  sendOTP: (id) => api.post(`/accounts/${id}/send-otp`),
-  verifyOTP: (id, otp) => api.post(`/accounts/${id}/verify-otp`, { otp }),
-  loginPassword: (id, email, password) => api.post(`/accounts/${id}/login-password`, { email, password }),
-  disconnect: (id) => api.post(`/accounts/${id}/disconnect`),
+  list        : ()         => api.get('/accounts'),
+  add         : d          => api.post('/accounts', d),
+  get         : id         => api.get(`/accounts/${id}`),
+  update      : (id,d)     => api.put(`/accounts/${id}`, d),
+  delete      : id         => api.delete(`/accounts/${id}`),
+  getDashboard: id         => api.get(`/accounts/${id}/dashboard`),
+  getAggregate: ()         => api.get('/accounts/aggregate/dashboard'),
+  connect     : id         => api.post(`/accounts/${id}/connect`),
+  disconnect  : id         => api.post(`/accounts/${id}/disconnect`),
 };
 
 export const ordersAPI = {
-  all: (params) => api.get('/orders/all', { params }),
-  byAccount: (accountId, params) => api.get(`/orders/account/${accountId}`, { params }),
-  updateStatus: (orderId, data) => api.post(`/orders/${orderId}/status`, data),
-  stats: () => api.get('/orders/stats'),
+  all          : p              => api.get('/orders/all', { params: p }),
+  byAccount    : (id,p)         => api.get(`/orders/account/${id}`, { params: p }),
+  accept       : (id, accountId)=> api.post(`/orders/${id}/accept`, { account_id: accountId }),
+  cancel       : (id, d)        => api.post(`/orders/${id}/cancel`, d),
+  dispatch     : (id, d)        => api.post(`/orders/${id}/dispatch`, d),
+  labelUrl     : (subOrderId, accountId) => `/api/orders/${subOrderId}/label?account_id=${accountId}`,
+};
+
+export const returnsAPI = {
+  all      : p          => api.get('/returns/all', { params: p }),
+  getOTP   : (id, aid)  => api.get(`/returns/${id}/otp`, { params: { account_id: aid } }),
+  accept   : (id, aid)  => api.post(`/returns/${id}/accept`, { account_id: aid }),
+  reject   : (id, d)    => api.post(`/returns/${id}/reject`, d),
 };
 
 export const productsAPI = {
-  all: (params) => api.get('/products/all', { params }),
-  updateInventory: (productId, data) => api.put(`/products/${productId}/inventory`, data),
-  categories: () => api.get('/products/categories'),
+  all            : p       => api.get('/products/all', { params: p }),
+  updateInventory: (id, d) => api.put(`/products/${id}/inventory`, d),
+  toggle         : (id, d) => api.put(`/products/${id}/toggle`, d),
+  categories     : ()      => api.get('/products/categories'),
 };
 
-export const notificationsAPI = {
-  list: () => api.get('/notifications'),
-  markRead: (ids) => api.post('/notifications/mark-read', { ids }),
-  unreadCount: () => api.get('/notifications/unread-count'),
+export const paymentsAPI = {
+  all: p => api.get('/payments/all', { params: p }),
 };
 
 export default api;
