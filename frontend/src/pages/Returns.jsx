@@ -6,12 +6,12 @@ import toast from 'react-hot-toast';
 const STATUS_OPTS = ['all','Return Requested','Return OTP Shared','Return Received','Refund Initiated','Refund Completed','Return Rejected'];
 
 const statusStyle = {
-  'Return Requested' : 'bg-yellow-500/20 text-yellow-400',
-  'Return OTP Shared': 'bg-blue-500/20 text-blue-400',
-  'Return Received'  : 'bg-purple-500/20 text-purple-400',
-  'Refund Initiated' : 'bg-orange-500/20 text-orange-400',
-  'Refund Completed' : 'bg-green-500/20 text-green-400',
-  'Return Rejected'  : 'bg-red-500/20 text-red-400',
+  'Return Requested' : 'bg-amber-100 text-amber-700',
+  'Return OTP Shared': 'bg-blue-100 text-blue-700',
+  'Return Received'  : 'bg-violet-100 text-violet-700',
+  'Refund Initiated' : 'bg-orange-100 text-orange-700',
+  'Refund Completed' : 'bg-green-100 text-green-700',
+  'Return Rejected'  : 'bg-red-100 text-red-700',
 };
 
 function OTPModal({ ret, onClose }) {
@@ -33,21 +33,21 @@ function OTPModal({ ret, onClose }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-        <div className="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={24} className="text-blue-400"/></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
+      <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={24} className="text-blue-500"/></div>
         <h3 className="text-lg font-semibold text-white mb-1">Return OTP</h3>
         <p className="text-gray-500 text-sm mb-5">{ret.product_name}</p>
         {loading ? (
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"/>
         ) : (
           <>
-            <div className="bg-gray-800 rounded-xl py-4 px-6 mb-4">
-              <p className="text-4xl font-bold font-mono tracking-widest text-blue-400">{otp}</p>
-              {expiry && <p className="text-xs text-gray-500 mt-2">Valid till {new Date(expiry).toLocaleString('en-IN')}</p>}
+            <div className="bg-gray-100 rounded-xl py-4 px-6 mb-4">
+              <p className="text-4xl font-bold font-mono tracking-widest text-blue-600">{otp}</p>
+              {expiry && <p className="text-xs text-gray-400 mt-2">Valid till {new Date(expiry).toLocaleString('en-IN')}</p>}
             </div>
-            {demo && <p className="text-xs text-yellow-500 mb-3">Demo OTP — connect account for live OTP</p>}
-            <p className="text-sm text-gray-400">Share this OTP with the customer to confirm pickup</p>
+            {demo && <p className="text-xs text-amber-600 mb-3">Demo OTP — connect account for live OTP</p>}
+            <p className="text-sm text-gray-500">Share this OTP with the customer to confirm pickup</p>
           </>
         )}
         <button onClick={onClose} className="btn-secondary w-full mt-5">Close</button>
@@ -70,19 +70,19 @@ function DetailModal({ ret, onClose, onAccept, onReject }) {
   const canAct = ret.status === 'Return Requested' || ret.status === 'Return OTP Shared';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
+      <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-white mb-5">Return Details</h3>
         <div className="space-y-3 text-sm">
           {[['Return ID',ret.return_id],['Order ID',ret.order_id],['Product',ret.product_name],['Customer',ret.customer_name],['Phone',ret.customer_phone||'—'],['Amount',`₹${(ret.amount||0).toLocaleString('en-IN')}`],['Reason',ret.reason||'—'],['Date',new Date(ret.return_date).toLocaleString('en-IN')],['Account',ret.account_name]].map(([l,v])=>(
-            <div key={l} className="flex justify-between border-b border-gray-800 pb-2">
+            <div key={l} className="flex justify-between border-b border-gray-200 pb-2">
               <span className="text-gray-500">{l}</span>
-              <span className="text-gray-200 text-right max-w-[60%]">{v}</span>
+              <span className="text-gray-700 text-right max-w-[60%]">{v}</span>
             </div>
           ))}
-          <div className="flex justify-between border-b border-gray-800 pb-2">
+          <div className="flex justify-between border-b border-gray-200 pb-2">
             <span className="text-gray-500">Status</span>
-            <span className={`badge ${statusStyle[ret.status]||'bg-gray-700 text-gray-400'}`}>{ret.status}</span>
+            <span className={`badge ${statusStyle[ret.status]||'bg-gray-200 text-gray-400'}`}>{ret.status}</span>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ export default function ReturnsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-white">Returns</h1><p className="text-gray-500 text-sm mt-0.5">{total} returns · {openReturnCount} need action</p></div>
+        <div><h1 className="text-xl font-bold text-gray-900">Returns</h1><p className="text-gray-500 text-sm mt-0.5">{total} returns · {openReturnCount} need action</p></div>
         <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm"><RefreshCw size={14} className={loading?'animate-spin':''}/> Refresh</button>
       </div>
 
@@ -168,37 +168,37 @@ export default function ReturnsPage() {
           <option value="">All Accounts</option>
           {accounts.map(a=><option key={a.id} value={a.id}>{a.account_name}</option>)}
         </select>
-        <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto">
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 overflow-x-auto">
           {STATUS_OPTS.map(s=>(
-            <button key={s} onClick={()=>{setStatusFilter(s);setPage(1);}} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s?'bg-pink-600 text-white':'text-gray-400 hover:text-gray-200'}`}>{s==='all'?'All':s}</button>
+            <button key={s} onClick={()=>{setStatusFilter(s);setPage(1);}} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s?'bg-pink-600 text-white':'text-gray-400 hover:text-gray-700'}`}>{s==='all'?'All':s}</button>
           ))}
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-gray-800">
+            <thead className="border-b border-gray-200">
               <tr>{['Return ID','Product','Customer','Amount','Reason','Status','Date','Actions'].map(h=><th key={h} className="px-4 py-3 text-left text-xs text-gray-500 font-medium">{h}</th>)}</tr>
             </thead>
             <tbody>
               {loading ? Array.from({length:6}).map((_,i)=>(
-                <tr key={i} className="border-b border-gray-800">{Array.from({length:8}).map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse"/></td>)}</tr>
+                <tr key={i} className="border-b border-gray-200">{Array.from({length:8}).map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse"/></td>)}</tr>
               )) : returns.length===0 ? (
                 <tr><td colSpan={8} className="text-center py-12 text-gray-500">No returns found</td></tr>
               ) : returns.map(r=>(
                 <tr key={`${r.account_id}-${r.return_id}`} className="table-row">
                   <td className="px-4 py-3 font-mono text-xs text-gray-400">{r.return_id}</td>
-                  <td className="px-4 py-3 text-gray-300 max-w-[140px] truncate">{r.product_name}</td>
-                  <td className="px-4 py-3"><p className="text-gray-300 text-xs">{r.customer_name}</p><p className="text-gray-600 text-xs">{r.customer_phone}</p></td>
-                  <td className="px-4 py-3 text-red-400 font-medium">₹{r.amount.toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{r.product_name}</td>
+                  <td className="px-4 py-3"><p className="text-gray-400 text-xs">{r.customer_name}</p><p className="text-gray-400 text-xs">{r.customer_phone}</p></td>
+                  <td className="px-4 py-3 text-rose-600 font-semibold">₹{r.amount.toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs max-w-[100px] truncate">{r.reason}</td>
-                  <td className="px-4 py-3"><span className={`badge ${statusStyle[r.status]||'bg-gray-700 text-gray-400'}`}>{r.status}</span></td>
+                  <td className="px-4 py-3"><span className={`badge ${statusStyle[r.status]||'bg-gray-200 text-gray-400'}`}>{r.status}</span></td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.return_date).toLocaleDateString('en-IN')}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
-                      <button onClick={()=>setDetailTarget(r)} className="p-1.5 text-gray-500 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors" title="View details"><Eye size={13}/></button>
+                      <button onClick={()=>setDetailTarget(r)} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors" title="View details"><Eye size={13}/></button>
                       {(r.status==='Return Requested'||r.status==='Return OTP Shared') && (
                         <>
                           <button onClick={()=>setOtpTarget(r)} className="px-2 py-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded text-xs transition-colors" title="Get OTP"><KeyRound size={12}/></button>
@@ -214,12 +214,12 @@ export default function ReturnsPage() {
           </table>
         </div>
         {totalPages>1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <p className="text-xs text-gray-500">Showing {(page-1)*limit+1}–{Math.min(page*limit,total)} of {total}</p>
             <div className="flex gap-1">
-              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 bg-gray-800 rounded-md">Prev</button>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 bg-gray-100 rounded-md">Prev</button>
               <span className="px-3 py-1 text-xs text-gray-400">{page}/{totalPages}</span>
-              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 bg-gray-800 rounded-md">Next</button>
+              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 bg-gray-100 rounded-md">Next</button>
             </div>
           </div>
         )}

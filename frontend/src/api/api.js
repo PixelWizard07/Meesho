@@ -30,7 +30,7 @@ export const accountsAPI = {
   delete      : id         => api.delete(`/accounts/${id}`),
   getDashboard: id         => api.get(`/accounts/${id}/dashboard`),
   getAggregate: ()         => api.get('/accounts/aggregate/dashboard'),
-  connect     : id         => api.post(`/accounts/${id}/connect`),
+  connect     : (id, pwd)  => api.post(`/accounts/${id}/connect`, { password: pwd }),
   disconnect  : id         => api.post(`/accounts/${id}/disconnect`),
 };
 

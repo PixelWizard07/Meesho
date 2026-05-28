@@ -23,11 +23,11 @@ function InventoryModal({ product, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <h3 className="text-white font-semibold mb-1">Update Inventory</h3>
+      <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <h3 className="text-gray-900 font-semibold mb-1">Update Inventory</h3>
         <p className="text-gray-500 text-sm mb-4">{product.name}</p>
         <div className="flex items-center gap-3 mb-5">
-          <button onClick={() => setQty(q => Math.max(0, q - 1))} className="w-9 h-9 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center"><ChevronDown size={18} /></button>
+          <button onClick={() => setQty(q => Math.max(0, q - 1))} className="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center"><ChevronDown size={18} /></button>
           <input
             type="number"
             min="0"
@@ -35,7 +35,7 @@ function InventoryModal({ product, onClose, onSave }) {
             onChange={e => setQty(Number(e.target.value))}
             className="input-field text-center text-xl font-bold"
           />
-          <button onClick={() => setQty(q => q + 1)} className="w-9 h-9 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center"><ChevronUp size={18} /></button>
+          <button onClick={() => setQty(q => q + 1)} className="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center"><ChevronUp size={18} /></button>
         </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
@@ -93,7 +93,7 @@ export default function ProductsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Products</h1>
+          <h1 className="text-xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-500 text-sm mt-0.5">{total} products across all accounts</p>
         </div>
         <button onClick={fetchProducts} className="btn-secondary flex items-center gap-2 text-sm">
@@ -123,13 +123,13 @@ export default function ProductsPage() {
           {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
 
-        <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1">
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1">
           {['all', 'active', 'inactive'].map(s => (
             <button
               key={s}
               onClick={() => { setStatusFilter(s); setPage(1); }}
               className={`px-3 py-1 rounded-md text-xs font-medium transition-colors capitalize ${
-                statusFilter === s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                statusFilter === s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-700'
               }`}
             >
               {s}
@@ -147,11 +147,11 @@ export default function ProductsPage() {
               onClick={() => { setCategoryFilter(c.name); setPage(1); }}
               className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs transition-colors ${
                 categoryFilter === c.name
-                  ? 'bg-pink-600/20 border-pink-500/40 text-pink-400'
-                  : 'bg-gray-900 border-gray-800 text-gray-500 hover:border-gray-700'
+                  ? 'bg-pink-50 border-pink-200 text-pink-600'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
               }`}
             >
-              {c.name} <span className="text-gray-600 ml-1">({c.count})</span>
+              {c.name} <span className="text-gray-400 ml-1">({c.count})</span>
             </button>
           ))}
         </div>
@@ -161,33 +161,33 @@ export default function ProductsPage() {
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-52 bg-gray-900 rounded-xl border border-gray-800 animate-pulse" />
+            <div key={i} className="h-52 bg-white rounded-xl border border-gray-200 animate-pulse" />
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="text-center py-16 bg-gray-900 border border-gray-800 rounded-xl">
-          <Package size={40} className="text-gray-700 mx-auto mb-3" />
+        <div className="text-center py-16 bg-white border border-gray-200 rounded-xl">
+          <Package size={40} className="text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No products found</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {products.map(product => (
-            <div key={`${product.account_id}-${product.product_id}`} className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+            <div key={`${product.account_id}-${product.product_id}`} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors">
               {/* Color block placeholder for image */}
-              <div className="w-full h-28 bg-gradient-to-br from-pink-500/20 to-purple-600/20 rounded-lg flex items-center justify-center mb-3">
-                <Package size={30} className="text-pink-500/40" />
+              <div className="w-full h-28 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg flex items-center justify-center mb-3">
+                <Package size={30} className="text-pink-300" />
               </div>
 
               <div className="space-y-1">
                 <p className="text-white text-sm font-medium leading-snug line-clamp-2">{product.name}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">{product.category}</span>
+                  <span className="text-xs text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full">{product.category}</span>
                   <div className="flex items-center gap-1 text-yellow-400">
                     <Star size={11} fill="currentColor" />
                     <span className="text-xs">{product.rating}</span>
                   </div>
                 </div>
-                <p className="text-lg font-bold text-white">₹{product.price.toLocaleString('en-IN')}</p>
+                <p className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString('en-IN')}</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>Stock: <span className={`font-medium ${product.inventory < 10 ? 'text-red-400' : 'text-green-400'}`}>{product.inventory}</span></span>
                   <span>Sales: {product.sales}</span>
@@ -205,14 +205,14 @@ export default function ProductsPage() {
                       fetchProducts();
                     } catch { toast.error('Failed to toggle product'); }
                   }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${product.status === 'active' ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${product.status === 'active' ? 'bg-green-100 text-green-700 hover:bg-green-500/30' : 'bg-gray-200 text-gray-400 hover:bg-gray-600'}`}
                 >
                   {product.status === 'active' ? <ToggleRight size={13}/> : <ToggleLeft size={13}/>}
                   {product.status}
                 </button>
                 <button
                   onClick={() => setEditInventory(product)}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 rounded-md text-xs transition-colors ml-auto"
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-md text-xs transition-colors ml-auto"
                 >
                   <Edit2 size={11}/> Stock
                 </button>

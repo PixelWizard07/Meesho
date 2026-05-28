@@ -35,15 +35,16 @@ router.get('/', authenticateToken, (req, res) => {
 
 router.post('/', authenticateToken, (req, res) => {
   const { account_name, meesho_email, password, store_name } = req.body;
-  if (!account_name || !meesho_email || !password)
-    return res.status(400).json({ error: 'account_name, meesho_email and password are required' });
+  if (!account_name || !meesho_email)
+    return res.status(400).json({ error: 'account_name and meesho_email are required' });
 
   try {
     const r = db.prepare(`
       INSERT INTO meesho_accounts
         (panel_user_id, account_name, meesho_email, store_name, enc_email, enc_password, login_status, status)
       VALUES (?,?,?,?,?,?,'disconnected','active')
-    `).run(req.user.id, account_name, meesho_email, store_name || account_name, encrypt(meesho_email), encrypt(password));
+    `).run(req.user.id, account_name, meesho_email, store_name || account_name,
+           encrypt(meesho_email), password ? encrypt(password) : null);
 
     db.prepare(`INSERT INTO activity_logs(panel_user_id,account_id,action,details) VALUES(?,?,'account_added',?)`)
       .run(req.user.id, r.lastInsertRowid, `Added: ${account_name}`);
@@ -84,10 +85,25 @@ router.delete('/:id', authenticateToken, (req, res) => {
 router.post('/:id/connect', authenticateToken, async (req, res) => {
   const a = find(req.params.id, req.user.id, res); if (!a) return;
 
-  const email    = decrypt(a.enc_email);
-  const password = decrypt(a.enc_password);
+  // Accept password from body (asked at connect time) OR fall back to stored encrypted creds
+  const { password: bodyPassword } = req.body;
+  let email, password;
+
+  if (bodyPassword) {
+    email    = a.meesho_email;
+    password = bodyPassword;
+    // Persist encrypted so reconnect works without re-entering
+    db.prepare('UPDATE meesho_accounts SET enc_email=?, enc_password=? WHERE id=?')
+      .run(encrypt(email), encrypt(password), a.id);
+  } else if (a.enc_email && a.enc_password) {
+    email    = decrypt(a.enc_email);
+    password = decrypt(a.enc_password);
+  } else {
+    return res.status(400).json({ error: 'Please enter your Meesho password to connect.' });
+  }
+
   if (!email || !password)
-    return res.status(400).json({ error: 'No credentials stored. Edit the account to add email & password.' });
+    return res.status(400).json({ error: 'Could not retrieve credentials. Please re-enter your password.' });
 
   const result = await loginWithPassword(email, password);
 

@@ -6,12 +6,12 @@ import toast from 'react-hot-toast';
 const STATUS_OPTS = ['all', 'Pending', 'Accepted', 'Label Generated', 'Dispatched', 'Delivered', 'Cancelled'];
 
 const statusStyle = {
-  Pending          : 'bg-yellow-500/20 text-yellow-400',
-  Accepted         : 'bg-blue-500/20 text-blue-400',
-  'Label Generated': 'bg-indigo-500/20 text-indigo-400',
-  Dispatched       : 'bg-purple-500/20 text-purple-400',
-  Delivered        : 'bg-green-500/20 text-green-400',
-  Cancelled        : 'bg-red-500/20 text-red-400',
+  Pending          : 'bg-amber-100 text-amber-700',
+  Accepted         : 'bg-blue-100 text-blue-700',
+  'Label Generated': 'bg-indigo-100 text-indigo-700',
+  Dispatched       : 'bg-violet-100 text-violet-700',
+  Delivered        : 'bg-green-100 text-green-700',
+  Cancelled        : 'bg-red-100 text-red-700',
 };
 
 function DispatchModal({ order, onClose, onDone }) {
@@ -31,8 +31,8 @@ function DispatchModal({ order, onClose, onDone }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <h3 className="text-white font-semibold mb-1">Dispatch Order</h3>
+      <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <h3 className="text-gray-900 font-semibold mb-1">Dispatch Order</h3>
         <p className="text-gray-500 text-sm mb-4">{order.product_name}</p>
         <input className="input-field mb-4" placeholder="Tracking ID (optional)" value={trackingId} onChange={e => setTrackingId(e.target.value)}/>
         <div className="flex gap-3">
@@ -99,7 +99,7 @@ export default function OrdersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Orders</h1>
+          <h1 className="text-xl font-bold text-gray-900">Orders</h1>
           <p className="text-gray-500 text-sm mt-0.5">{total} orders across all accounts</p>
         </div>
         <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm">
@@ -117,10 +117,10 @@ export default function OrdersPage() {
           <option value="">All Accounts</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.account_name}</option>)}
         </select>
-        <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto">
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 overflow-x-auto">
           {STATUS_OPTS.map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-700'}`}>
               {s === 'all' ? 'All' : s}
             </button>
           ))}
@@ -128,33 +128,33 @@ export default function OrdersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-gray-800">
+            <thead className="border-b border-gray-200">
               <tr>{['Order ID','Product','Customer','Account','Amount','Status','Date','Actions'].map(h => (
                 <th key={h} className="px-4 py-3 text-left text-xs text-gray-500 font-medium">{h}</th>
               ))}</tr>
             </thead>
             <tbody>
               {loading ? Array.from({length:8}).map((_,i) => (
-                <tr key={i} className="border-b border-gray-800">
-                  {Array.from({length:8}).map((_,j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse"/></td>)}
+                <tr key={i} className="border-b border-gray-200">
+                  {Array.from({length:8}).map((_,j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse"/></td>)}
                 </tr>
               )) : orders.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-12 text-gray-500">No orders found</td></tr>
               ) : orders.map(order => (
                 <tr key={`${order.account_id}-${order.order_id}`} className="table-row">
                   <td className="px-4 py-3 font-mono text-xs text-gray-400">{order.order_id}</td>
-                  <td className="px-4 py-3 text-gray-300 max-w-[150px] truncate">{order.product_name}</td>
+                  <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate">{order.product_name}</td>
                   <td className="px-4 py-3">
-                    <p className="text-gray-300 text-xs">{order.customer_name}</p>
-                    <p className="text-gray-600 text-xs">{order.customer_city}</p>
+                    <p className="text-gray-400 text-xs">{order.customer_name}</p>
+                    <p className="text-gray-400 text-xs">{order.customer_city}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{order.account_name}</td>
-                  <td className="px-4 py-3 text-green-400 font-medium">₹{(order.amount||0).toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 text-green-600 font-semibold">₹{(order.amount||0).toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3">
-                    <span className={`badge ${statusStyle[order.status] || 'bg-gray-700 text-gray-400'}`}>{order.status}</span>
+                    <span className={`badge ${statusStyle[order.status] || 'bg-gray-200 text-gray-400'}`}>{order.status}</span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(order.order_date).toLocaleDateString('en-IN')}</td>
                   <td className="px-4 py-3">
@@ -189,12 +189,12 @@ export default function OrdersPage() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <p className="text-xs text-gray-500">Showing {(page-1)*limit+1}–{Math.min(page*limit,total)} of {total}</p>
             <div className="flex gap-1">
-              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 bg-gray-800 rounded-md">Prev</button>
+              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 bg-gray-100 rounded-md">Prev</button>
               <span className="px-3 py-1 text-xs text-gray-400">{page}/{totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 bg-gray-800 rounded-md">Next</button>
+              <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages} className="px-3 py-1 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 bg-gray-100 rounded-md">Next</button>
             </div>
           </div>
         )}

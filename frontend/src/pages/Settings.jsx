@@ -6,12 +6,12 @@ import toast from 'react-hot-toast';
 
 function Section({ icon: Icon, title, children }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-800">
-        <div className="w-8 h-8 bg-pink-500/10 rounded-lg flex items-center justify-center">
-          <Icon size={16} className="text-pink-400" />
+    <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-200">
+        <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
+          <Icon size={16} className="text-pink-500" />
         </div>
-        <h3 className="text-white font-semibold">{title}</h3>
+        <h3 className="text-gray-900 font-semibold">{title}</h3>
       </div>
       {children}
     </div>
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5 max-w-2xl">
       <div>
-        <h1 className="text-xl font-bold text-white">Settings</h1>
+        <h1 className="text-xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-500 text-sm mt-0.5">Manage your panel account and preferences</p>
       </div>
 
@@ -68,7 +68,7 @@ export default function SettingsPage() {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Role</label>
             <div className="flex items-center gap-2">
-              <span className="badge bg-pink-500/20 text-pink-400 capitalize">{user?.role}</span>
+              <span className="badge bg-pink-100 text-pink-600 capitalize">{user?.role}</span>
             </div>
           </div>
         </div>
@@ -115,20 +115,20 @@ export default function SettingsPage() {
 
       {/* API Info */}
       <Section icon={Shield} title="Meesho API Integration">
-        <div className="space-y-3 text-sm text-gray-400">
+        <div className="space-y-3 text-sm text-gray-500">
           <p>To connect your Meesho supplier accounts with live data, you need an API token from the Meesho Supplier Panel.</p>
-          <div className="bg-gray-800/60 rounded-lg p-4 space-y-2">
-            <p className="text-white font-medium text-xs">How to get your API token:</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs text-gray-400">
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <p className="text-gray-800 font-medium text-xs">How to get your API token:</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-gray-500">
               <li>Log in to your Meesho Supplier Panel</li>
               <li>Go to Settings → API Access</li>
               <li>Generate a new API token</li>
               <li>Copy the token and paste it when adding your account here</li>
             </ol>
           </div>
-          <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-            <Info size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-blue-300">
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <Info size={15} className="text-blue-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-blue-700">
               Without an API token, the panel displays demo data. Add your token in the Accounts section to see live orders and products.
             </p>
           </div>
@@ -138,17 +138,17 @@ export default function SettingsPage() {
       {/* App info */}
       <Section icon={Info} title="About">
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between text-gray-400">
-            <span>Version</span><span className="text-gray-300">1.0.0</span>
+          <div className="flex justify-between text-gray-500">
+            <span>Version</span><span className="text-gray-600">1.0.0</span>
           </div>
-          <div className="flex justify-between text-gray-400">
-            <span>Backend</span><span className="text-gray-300">Node.js + Express</span>
+          <div className="flex justify-between text-gray-500">
+            <span>Backend</span><span className="text-gray-600">Node.js + Express</span>
           </div>
-          <div className="flex justify-between text-gray-400">
-            <span>Database</span><span className="text-gray-300">SQLite</span>
+          <div className="flex justify-between text-gray-500">
+            <span>Database</span><span className="text-gray-600">SQLite</span>
           </div>
-          <div className="flex justify-between text-gray-400">
-            <span>Frontend</span><span className="text-gray-300">React + Vite + Tailwind</span>
+          <div className="flex justify-between text-gray-500">
+            <span>Frontend</span><span className="text-gray-600">React + Vite + Tailwind</span>
           </div>
         </div>
       </Section>

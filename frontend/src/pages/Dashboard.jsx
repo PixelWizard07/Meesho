@@ -13,10 +13,10 @@ import toast from 'react-hot-toast';
 
 function StatCard({ icon: Icon, label, value, sub, color = 'pink', loading }) {
   const colors = {
-    pink: 'text-pink-400 bg-pink-500/10',
-    blue: 'text-blue-400 bg-blue-500/10',
-    green: 'text-green-400 bg-green-500/10',
-    yellow: 'text-yellow-400 bg-yellow-500/10',
+    pink: 'text-pink-500 bg-pink-50',
+    blue: 'text-blue-500 bg-blue-50',
+    green: 'text-green-500 bg-green-50',
+    yellow: 'text-yellow-500 bg-yellow-50',
   };
   return (
     <div className="stat-card">
@@ -24,9 +24,9 @@ function StatCard({ icon: Icon, label, value, sub, color = 'pink', loading }) {
         <div>
           <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{label}</p>
           {loading ? (
-            <div className="h-8 w-24 bg-gray-800 rounded animate-pulse mt-2" />
+            <div className="h-8 w-24 bg-gray-100 rounded animate-pulse mt-2" />
           ) : (
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
           )}
           {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
         </div>
@@ -40,14 +40,14 @@ function StatCard({ icon: Icon, label, value, sub, color = 'pink', loading }) {
 
 function StatusBadge({ status }) {
   const map = {
-    Pending: 'bg-yellow-500/20 text-yellow-400',
-    Accepted: 'bg-blue-500/20 text-blue-400',
-    Dispatched: 'bg-purple-500/20 text-purple-400',
-    Delivered: 'bg-green-500/20 text-green-400',
-    Cancelled: 'bg-red-500/20 text-red-400',
+    Pending: 'bg-amber-100 text-amber-700',
+    Accepted: 'bg-blue-100 text-blue-700',
+    Dispatched: 'bg-violet-100 text-violet-700',
+    Delivered: 'bg-green-100 text-green-700',
+    Cancelled: 'bg-red-100 text-red-700',
   };
   return (
-    <span className={`badge ${map[status] || 'bg-gray-700 text-gray-400'}`}>{status}</span>
+    <span className={`badge ${map[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
   );
 }
 
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-500 text-sm mt-0.5">Overview across all your Meesho accounts</p>
         </div>
         <button
@@ -125,8 +125,8 @@ export default function DashboardPage() {
                 onClick={() => handleAccountSwitch(acc)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   selectedAccount?.id === acc.id
-                    ? 'bg-pink-600/20 border-pink-600/50 text-pink-400'
-                    : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
+                    ? 'bg-pink-50 border-pink-200 text-pink-600'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'
                 }`}
               >
                 {isConnected
@@ -147,20 +147,20 @@ export default function DashboardPage() {
         <StatCard icon={Package} label="Active Products" value={data?.active_products ?? 0} color="yellow" loading={loading} />
       </div>
       {(data?.open_returns ?? 0) > 0 && (
-        <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
-          <RotateCcw size={16} className="text-orange-400 shrink-0"/>
-          <p className="text-sm text-orange-300"><span className="font-bold">{data.open_returns}</span> open return{data.open_returns !== 1 ? 's' : ''} need your attention</p>
-          <a href="/returns" className="ml-auto text-xs text-orange-400 hover:text-orange-300 underline whitespace-nowrap">View Returns</a>
+        <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+          <RotateCcw size={16} className="text-orange-600 shrink-0"/>
+          <p className="text-sm text-orange-700"><span className="font-bold text-orange-800">{data.open_returns}</span> open return{data.open_returns !== 1 ? 's' : ''} need your attention</p>
+          <a href="/returns" className="ml-auto text-xs text-orange-600 hover:text-orange-700 underline whitespace-nowrap">View Returns</a>
         </div>
       )}
 
       {/* No accounts state */}
       {!loading && data?.total_accounts === 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center">
-          <div className="w-14 h-14 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+          <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <PlusCircle size={24} className="text-pink-400" />
           </div>
-          <h3 className="text-white font-semibold mb-2">No Meesho accounts added</h3>
+          <h3 className="text-gray-800 font-semibold mb-2">No Meesho accounts added</h3>
           <p className="text-gray-500 text-sm mb-4">Add your Meesho supplier accounts to start managing from this panel</p>
           <Link to="/accounts" className="btn-primary inline-flex items-center gap-2 text-sm">
             <PlusCircle size={15} /> Add Account
@@ -173,12 +173,12 @@ export default function DashboardPage() {
         <>
           <div className="grid lg:grid-cols-3 gap-4">
             {/* Revenue Chart */}
-            <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold text-sm">Revenue (Last 7 Days)</h3>
+                <h3 className="text-gray-800 font-semibold text-sm">Revenue (Last 7 Days)</h3>
                 <div className="flex items-center gap-2">
                   {accountData.is_live
-                    ? <span className="flex items-center gap-1 text-xs text-green-400"><Wifi size={11} /> Live</span>
+                    ? <span className="flex items-center gap-1 text-xs text-green-500"><Wifi size={11} /> Live</span>
                     : <span className="flex items-center gap-1 text-xs text-gray-500"><WifiOff size={11} /> Demo</span>}
                   <span className="text-xs text-gray-600">{selectedAccount?.store_name || selectedAccount?.account_name}</span>
                 </div>
@@ -191,11 +191,11 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor="#ec4899" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="date" stroke="#6b7280" tick={{ fontSize: 11 }} />
                   <YAxis stroke="#6b7280" tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }}
                     formatter={v => [`₹${v.toLocaleString('en-IN')}`, 'Revenue']}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#ec4899" strokeWidth={2} fill="url(#revGrad)" />
@@ -204,15 +204,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Orders chart */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <h3 className="text-white font-semibold text-sm mb-4">Orders per Day</h3>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-800 font-semibold text-sm mb-4">Orders per Day</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={accountData.revenue_chart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="date" stroke="#6b7280" tick={{ fontSize: 10 }} />
                   <YAxis stroke="#6b7280" tick={{ fontSize: 10 }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }}
                   />
                   <Bar dataKey="orders" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -221,21 +221,21 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Orders */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-              <h3 className="text-white font-semibold text-sm">Recent Orders</h3>
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="text-gray-800 font-semibold text-sm">Recent Orders</h3>
               <Link to="/orders" className="text-pink-400 text-xs hover:text-pink-300">View all</Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Order ID</th>
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Product</th>
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Customer</th>
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Amount</th>
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Status</th>
-                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium">Date</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Order ID</th>
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Product</th>
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Customer</th>
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Amount</th>
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Status</th>
+                    <th className="px-5 py-3 text-left text-xs text-gray-500 font-medium font-medium">Date</th>
                   </tr>
                 </thead>
                 <tbody>
