@@ -10,6 +10,7 @@ import ReturnsPage   from './pages/Returns';
 import ProductsPage  from './pages/Products';
 import PaymentsPage  from './pages/Payments';
 import SettingsPage  from './pages/Settings';
+import UsersPage     from './pages/Users';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="returns"   element={<ReturnsPage/>}/>
           <Route path="products"  element={<ProductsPage/>}/>
           <Route path="payments"  element={<PaymentsPage/>}/>
+          <Route path="users"     element={<UsersPage/>}/>
           <Route path="settings"  element={<SettingsPage/>}/>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace/>}/>

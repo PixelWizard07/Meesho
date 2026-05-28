@@ -1,18 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, Package, Settings, X, RotateCcw, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, Package, Settings, X, RotateCcw, Wallet, UserCog } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const navItems = [
+const NAV_ITEMS = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/accounts',  icon: Users,           label: 'Accounts'  },
   { to: '/orders',    icon: ShoppingBag,     label: 'Orders'    },
   { to: '/returns',   icon: RotateCcw,       label: 'Returns'   },
   { to: '/products',  icon: Package,         label: 'Products'  },
   { to: '/payments',  icon: Wallet,          label: 'Payments'  },
+  { to: '/users',     icon: UserCog,         label: 'Users',    adminOnly: true },
   { to: '/settings',  icon: Settings,        label: 'Settings'  },
 ];
 
 export default function Sidebar({ open, onClose }) {
+  const { user } = useAuth();
+  const navItems = NAV_ITEMS.filter(item => !item.adminOnly || user?.role === 'admin');
+
   return (
     <>
       {open && <div className="fixed inset-0 z-20 bg-black/20 lg:hidden" onClick={onClose}/>}
@@ -21,11 +26,8 @@ export default function Sidebar({ open, onClose }) {
         {/* Meesho logo area */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1">
-              {/* Meesho-style logo - M shape with gradient */}
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f43397] to-[#c0007b] flex items-center justify-center shadow-sm">
-                <span className="text-white font-black text-sm">M</span>
-              </div>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f43397] to-[#c0007b] flex items-center justify-center shadow-sm">
+              <span className="text-white font-black text-sm">M</span>
             </div>
             <div>
               <p className="text-gray-900 font-bold text-sm leading-tight">Meesho Supplier</p>
@@ -34,6 +36,19 @@ export default function Sidebar({ open, onClose }) {
           </div>
           <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-600 p-1"><X size={18}/></button>
         </div>
+
+        {/* User badge */}
+        {user && (
+          <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#f43397] to-[#c0007b] flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">{user.username.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-900 truncate">{user.username}</p>
+              <p className="text-[10px] text-gray-400 capitalize">{user.role}</p>
+            </div>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto">

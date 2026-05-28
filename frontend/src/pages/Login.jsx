@@ -93,9 +93,10 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-5 p-3.5 bg-[#fef0f7] rounded-xl border border-[#fcd4ec]">
-              <p className="text-xs text-[#c0007b] font-bold mb-1">Demo Access</p>
+              <p className="text-xs text-[#c0007b] font-bold mb-1.5">Default Admin Login</p>
               <p className="text-xs text-gray-600">Username: <span className="font-mono font-bold text-[#f43397]">admin</span></p>
               <p className="text-xs text-gray-600">Password: <span className="font-mono font-bold text-[#f43397]">admin123</span></p>
+              <p className="text-xs text-gray-400 mt-2">Each seller has their own login. Admin can create additional users from the Users section.</p>
             </div>
           </div>
         </div>

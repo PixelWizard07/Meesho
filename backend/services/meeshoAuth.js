@@ -11,14 +11,23 @@ const BASE   = 'https://supplier-app-api.meesho.com';
 const ORIGIN = 'https://supplier.meesho.com';
 
 const HEADERS = {
-  'User-Agent'      : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
-  'Accept'          : 'application/json, text/plain, */*',
-  'Accept-Language' : 'en-IN,en;q=0.9',
-  'Origin'          : ORIGIN,
-  'Referer'         : `${ORIGIN}/`,
-  'Content-Type'    : 'application/json',
-  'x-app-source'    : 'supplier-web',
-  'x-platform'      : 'web',
+  'User-Agent'         : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Accept'             : 'application/json, text/plain, */*',
+  'Accept-Language'    : 'en-IN,en;q=0.9,hi;q=0.8',
+  'Accept-Encoding'    : 'gzip, deflate, br',
+  'Origin'             : ORIGIN,
+  'Referer'            : `${ORIGIN}/`,
+  'Content-Type'       : 'application/json',
+  'x-app-source'       : 'supplier-web',
+  'x-platform'         : 'web',
+  'x-meesho-client-name': 'supplier-web',
+  'x-device-id'        : 'web-' + Math.random().toString(36).slice(2, 12),
+  'sec-ch-ua'          : '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+  'sec-ch-ua-mobile'   : '?0',
+  'sec-ch-ua-platform' : '"Windows"',
+  'sec-fetch-dest'     : 'empty',
+  'sec-fetch-mode'     : 'cors',
+  'sec-fetch-site'     : 'same-site',
 };
 
 function makeClient(jar, token) {
@@ -34,19 +43,38 @@ function makeClient(jar, token) {
 async function loginWithPassword(email, password) {
   const jar    = new CookieJar();
   const client = makeClient(jar);
-  try {
-    // Meesho supplier panel login endpoint
-    const res = await client.post('/api/v1/supply/auth/supplier-login', { email, password });
-    return extractSession(res, jar);
-  } catch (err) {
-    // Fallback endpoint variation
+  const endpoints = [
+    { url: '/api/v1/supply/auth/supplier-login', body: { email, password } },
+    { url: '/api/v1/supply/auth/login',          body: { email, password } },
+    { url: '/api/v2/supply/auth/login',          body: { email, password } },
+    { url: '/api/v1/supply/auth/supplier-login', body: { email_id: email, password } },
+  ];
+
+  let lastErr = null;
+  for (const { url, body } of endpoints) {
     try {
-      const res2 = await client.post('/api/v1/supply/auth/login', { email, password });
-      return extractSession(res2, jar);
-    } catch (err2) {
-      return { success: false, message: err2.response?.data?.message || err2.message, status: err2.response?.status };
+      const res = await client.post(url, body);
+      if (res.data && (res.data.token || res.data?.data?.token || res.data?.access_token || res.data?.data?.access_token)) {
+        return extractSession(res, jar);
+      }
+      // If we get 200 but no token, treat as partial success — try to extract anyway
+      if (res.status === 200) return extractSession(res, jar);
+    } catch (err) {
+      lastErr = err;
+      const status = err.response?.status;
+      // 400/404 → wrong endpoint, try next
+      // 401 → wrong credentials, stop trying
+      if (status === 401) {
+        const msg = err.response?.data?.message || err.response?.data?.error || 'Invalid email or password';
+        return { success: false, message: msg, status: 401 };
+      }
+      if (status === 429) return { success: false, message: 'Too many attempts. Please wait before trying again.', status: 429 };
+      // Continue to next endpoint for other errors
     }
   }
+
+  const errMsg = lastErr?.response?.data?.message || lastErr?.response?.data?.error || lastErr?.message || 'Unable to connect to Meesho. Check your credentials and network.';
+  return { success: false, message: errMsg, status: lastErr?.response?.status };
 }
 
 function extractSession(res, jar) {

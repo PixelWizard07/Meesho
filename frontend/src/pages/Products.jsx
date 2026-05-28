@@ -173,13 +173,18 @@ export default function ProductsPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {products.map(product => (
             <div key={`${product.account_id}-${product.product_id}`} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors">
-              {/* Color block placeholder for image */}
-              <div className="w-full h-28 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg flex items-center justify-center mb-3">
-                <Package size={30} className="text-pink-300" />
+              {/* Product image — real from Meesho if connected, else gradient placeholder */}
+              <div className="w-full h-28 rounded-lg mb-3 overflow-hidden bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center relative">
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"
+                    onError={e => { e.currentTarget.style.display = 'none'; }}/>
+                ) : (
+                  <Package size={30} className="text-pink-300"/>
+                )}
               </div>
 
               <div className="space-y-1">
-                <p className="text-white text-sm font-medium leading-snug line-clamp-2">{product.name}</p>
+                <p className="text-gray-900 text-sm font-medium leading-snug line-clamp-2">{product.name}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-[#f43397] bg-[#fef0f7] px-2 py-0.5 rounded-full">{product.category}</span>
                   <div className="flex items-center gap-1 text-yellow-400">

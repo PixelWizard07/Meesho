@@ -4,6 +4,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { loginWithPassword, MeeshoAPI } = require('../services/meeshoAuth');
 const { encrypt, decrypt }             = require('../services/encrypt');
 const { getDashboard }                 = require('../services/mockData');
+const emailSvc                         = require('../services/emailService');
 
 const router = express.Router();
 
@@ -118,6 +119,19 @@ router.post('/:id/connect', authenticateToken, async (req, res) => {
     `).run(result.token, result.cookies, expiry, result.supplierId, result.storeName, result.phone, a.id);
     db.prepare(`INSERT INTO activity_logs(panel_user_id,account_id,action,details) VALUES(?,?,'connected','Connected via email+password')`)
       .run(req.user.id, a.id);
+
+    // Send email notification
+    const panelUser = db.prepare('SELECT email, username FROM panel_users WHERE id=?').get(req.user.id);
+    if (panelUser?.email) {
+      emailSvc.sendAccountConnected({
+        to: panelUser.email,
+        accountName: a.account_name,
+        storeName: result.storeName || a.store_name,
+        meeshoEmail: email,
+        username: panelUser.username,
+      }).catch(() => {});
+    }
+
     res.json({ message: 'Account connected to Meesho', store_name: result.storeName });
   } else {
     res.status(401).json({ error: result.message || 'Login failed — check email/password' });
@@ -127,6 +141,12 @@ router.post('/:id/connect', authenticateToken, async (req, res) => {
 router.post('/:id/disconnect', authenticateToken, (req, res) => {
   const a = find(req.params.id, req.user.id, res); if (!a) return;
   db.prepare(`UPDATE meesho_accounts SET session_token=NULL,session_cookies=NULL,session_expiry=NULL,login_status='disconnected' WHERE id=?`).run(a.id);
+
+  const panelUser = db.prepare('SELECT email, username FROM panel_users WHERE id=?').get(req.user.id);
+  if (panelUser?.email) {
+    emailSvc.sendAccountDisconnected({ to: panelUser.email, accountName: a.account_name, username: panelUser.username }).catch(() => {});
+  }
+
   res.json({ message: 'Disconnected' });
 });
 
@@ -219,6 +239,16 @@ function normaliseOrders(raw, a) {
     account_id    : a.id, account_name: a.account_name, store_name: a.store_name,
   }));
 }
+function extractProductImage(p) {
+  if (Array.isArray(p.images) && p.images.length) return typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.url || p.images[0]?.image_url || null;
+  if (p.image_url) return p.image_url;
+  if (p.primary_image) return p.primary_image;
+  if (p.thumbnail_url) return p.thumbnail_url;
+  if (p.cover_image_url) return p.cover_image_url;
+  if (Array.isArray(p.catalog_images) && p.catalog_images.length) return typeof p.catalog_images[0] === 'string' ? p.catalog_images[0] : p.catalog_images[0]?.url || null;
+  if (Array.isArray(p.product_images) && p.product_images.length) return typeof p.product_images[0] === 'string' ? p.product_images[0] : p.product_images[0]?.url || null;
+  return null;
+}
 function normaliseProducts(raw, a) {
   return raw.map(p => ({
     product_id : p.product_id||p.id||String(p.catalog_id||''),
@@ -231,6 +261,7 @@ function normaliseProducts(raw, a) {
     rating     : Number(p.rating||p.avg_rating||0).toFixed(1),
     status     : p.is_active===false?'inactive':'active',
     is_active  : p.is_active!==false,
+    image_url  : extractProductImage(p),
     account_id : a.id, account_name: a.account_name, store_name: a.store_name,
   }));
 }

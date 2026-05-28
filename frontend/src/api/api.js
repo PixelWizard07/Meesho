@@ -22,6 +22,13 @@ export const authAPI = {
   changePassword : d  => api.post('/auth/change-password', d),
 };
 
+export const usersAPI = {
+  list        : ()      => api.get('/auth/users'),
+  create      : d       => api.post('/auth/create-user', d),
+  update      : (id, d) => api.put(`/auth/users/${id}`, d),
+  delete      : id      => api.delete(`/auth/users/${id}`),
+};
+
 export const accountsAPI = {
   list        : ()         => api.get('/accounts'),
   add         : d          => api.post('/accounts', d),

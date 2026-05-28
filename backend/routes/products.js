@@ -7,6 +7,16 @@ const { getProducts }       = require('../services/mockData');
 const router = express.Router();
 
 function liveAPI(a) { return a.session_token && a.login_status==='connected' ? new MeeshoAPI(a.session_token, a.session_cookies) : null; }
+function extractImage(p) {
+  if (Array.isArray(p.images) && p.images.length) return typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.url || null;
+  if (p.image_url) return p.image_url;
+  if (p.primary_image) return p.primary_image;
+  if (p.thumbnail_url) return p.thumbnail_url;
+  if (p.cover_image_url) return p.cover_image_url;
+  if (Array.isArray(p.catalog_images) && p.catalog_images.length) return typeof p.catalog_images[0] === 'string' ? p.catalog_images[0] : p.catalog_images[0]?.url || null;
+  if (Array.isArray(p.product_images) && p.product_images.length) return typeof p.product_images[0] === 'string' ? p.product_images[0] : p.product_images[0]?.url || null;
+  return null;
+}
 function norm(p, a) {
   return {
     product_id : p.product_id||p.id||String(p.catalog_id||''),
@@ -19,6 +29,7 @@ function norm(p, a) {
     rating     : Number(p.rating||p.avg_rating||0).toFixed(1),
     status     : p.is_active===false?'inactive':'active',
     is_active  : p.is_active!==false,
+    image_url  : extractImage(p),
     account_id : a.id, account_name:a.account_name, store_name:a.store_name,
   };
 }
