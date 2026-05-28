@@ -105,6 +105,8 @@ function DetailModal({ ret, onClose, onAccept, onReject }) {
   );
 }
 
+const SYNC_INTERVAL = 60000; // 60 seconds
+
 export default function ReturnsPage() {
   const [returns, setReturns]   = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -116,20 +118,30 @@ export default function ReturnsPage() {
   const [search, setSearch]     = useState('');
   const [otpTarget, setOtpTarget]     = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
+  const [syncing, setSyncing]   = useState(false);
   const limit = 15;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setSyncing(true);
     try {
       const r = await returnsAPI.all({ status: statusFilter, page, limit, account_id: accountFilter||undefined, search: search||undefined });
       setReturns(r.data.returns);
       setTotal(r.data.total);
-    } catch { toast.error('Failed to load returns'); }
-    finally { setLoading(false); }
+      setLastSync(new Date());
+    } catch { if (!silent) toast.error('Failed to load returns'); }
+    finally { setLoading(false); setSyncing(false); }
   }, [statusFilter, accountFilter, page, search]);
 
   useEffect(() => { accountsAPI.list().then(r=>setAccounts(r.data)).catch(()=>{}); }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Auto-sync every 60 seconds
+  useEffect(() => {
+    const id = setInterval(() => load(true), SYNC_INTERVAL);
+    return () => clearInterval(id);
+  }, [load]);
 
   const handleAccept = async (ret) => {
     try { await returnsAPI.accept(ret.return_id, ret.account_id); toast.success('Return accepted'); load(); }
@@ -147,8 +159,19 @@ export default function ReturnsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-gray-900">Returns</h1><p className="text-gray-500 text-sm mt-0.5">{total} returns · {openReturnCount} need action</p></div>
-        <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm"><RefreshCw size={14} className={loading?'animate-spin':''}/> Refresh</button>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Returns</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{total} returns across all accounts · {openReturnCount} need action</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastSync && (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              {syncing ? <RefreshCw size={11} className="animate-spin text-[#f43397]"/> : <Clock size={11}/>}
+              {syncing ? 'Syncing…' : `Synced ${lastSync.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})}`}
+            </span>
+          )}
+          <button onClick={() => load()} className="btn-secondary flex items-center gap-2 text-sm"><RefreshCw size={14} className={loading?'animate-spin':''}/> Refresh</button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -180,18 +203,19 @@ export default function ReturnsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200">
-              <tr>{['Return ID','Product','Customer','Amount','Reason','Status','Date','Actions'].map(h=><th key={h} className="px-4 py-3 text-left text-xs text-gray-500 font-medium">{h}</th>)}</tr>
+              <tr>{['Return ID','Product','Customer','Account','Amount','Reason','Status','Date','Actions'].map(h=><th key={h} className="px-4 py-3 text-left text-xs text-gray-500 font-medium">{h}</th>)}</tr>
             </thead>
             <tbody>
               {loading ? Array.from({length:6}).map((_,i)=>(
-                <tr key={i} className="border-b border-gray-200">{Array.from({length:8}).map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse"/></td>)}</tr>
+                <tr key={i} className="border-b border-gray-200">{Array.from({length:9}).map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse"/></td>)}</tr>
               )) : returns.length===0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-gray-500">No returns found</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-gray-500">No returns found</td></tr>
               ) : returns.map(r=>(
                 <tr key={`${r.account_id}-${r.return_id}`} className="table-row">
                   <td className="px-4 py-3 font-mono text-xs text-gray-400">{r.return_id}</td>
                   <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{r.product_name}</td>
                   <td className="px-4 py-3"><p className="text-gray-400 text-xs">{r.customer_name}</p><p className="text-gray-400 text-xs">{r.customer_phone}</p></td>
+                  <td className="px-4 py-3"><span className="text-xs text-[#f43397] bg-[#fef0f7] px-2 py-0.5 rounded-full font-medium">{r.account_name}</span></td>
                   <td className="px-4 py-3 text-rose-600 font-semibold">₹{r.amount.toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs max-w-[100px] truncate">{r.reason}</td>
                   <td className="px-4 py-3"><span className={`badge ${statusStyle[r.status]||'bg-gray-200 text-gray-400'}`}>{r.status}</span></td>
