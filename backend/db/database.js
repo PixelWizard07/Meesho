@@ -1,9 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, '../data/meesho_panel.db');
-const fs = require('fs');
 
 if (!fs.existsSync(path.join(__dirname, '../data'))) {
   fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
@@ -30,13 +30,22 @@ db.exec(`
     panel_user_id INTEGER NOT NULL,
     account_name TEXT NOT NULL,
     supplier_id TEXT,
-    email TEXT NOT NULL,
-    phone TEXT,
-    api_token TEXT,
-    refresh_token TEXT,
-    token_expiry DATETIME,
+    email TEXT,
+    phone TEXT NOT NULL,
     store_name TEXT,
     status TEXT DEFAULT 'active',
+
+    -- Encrypted credentials
+    enc_phone TEXT,
+    enc_password TEXT,
+
+    -- Session (OTP login result)
+    session_token TEXT,
+    session_cookies TEXT,
+    session_expiry DATETIME,
+    login_status TEXT DEFAULT 'disconnected',
+    -- 'disconnected' | 'otp_pending' | 'connected' | 'expired'
+
     last_synced DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (panel_user_id) REFERENCES panel_users(id) ON DELETE CASCADE
@@ -89,7 +98,21 @@ db.exec(`
   );
 `);
 
-// Seed default admin user if none exists
+// Run any missing column migrations safely
+const accountCols = db.pragma('table_info(meesho_accounts)').map(c => c.name);
+const addIfMissing = (col, def) => {
+  if (!accountCols.includes(col)) {
+    db.exec(`ALTER TABLE meesho_accounts ADD COLUMN ${col} ${def}`);
+  }
+};
+addIfMissing('enc_phone',       'TEXT');
+addIfMissing('enc_password',    'TEXT');
+addIfMissing('session_token',   'TEXT');
+addIfMissing('session_cookies', 'TEXT');
+addIfMissing('session_expiry',  'DATETIME');
+addIfMissing('login_status',    "TEXT DEFAULT 'disconnected'");
+
+// Seed default admin
 const existing = db.prepare('SELECT id FROM panel_users WHERE username = ?').get('admin');
 if (!existing) {
   const hash = bcrypt.hashSync('admin123', 10);

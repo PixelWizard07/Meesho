@@ -37,6 +37,11 @@ export const accountsAPI = {
   delete: (id) => api.delete(`/accounts/${id}`),
   getDashboard: (id) => api.get(`/accounts/${id}/dashboard`),
   getAggregate: () => api.get('/accounts/aggregate/dashboard'),
+  // Meesho credential-based login
+  sendOTP: (id) => api.post(`/accounts/${id}/send-otp`),
+  verifyOTP: (id, otp) => api.post(`/accounts/${id}/verify-otp`, { otp }),
+  loginPassword: (id, email, password) => api.post(`/accounts/${id}/login-password`, { email, password }),
+  disconnect: (id) => api.post(`/accounts/${id}/disconnect`),
 };
 
 export const ordersAPI = {

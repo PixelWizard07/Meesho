@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ShoppingBag, Package, TrendingUp, Users,
   RefreshCw, Clock, CheckCircle, XCircle, AlertCircle, PlusCircle,
+  Wifi, WifiOff,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
@@ -116,19 +117,25 @@ export default function DashboardPage() {
       {/* Account selector */}
       {data?.accounts?.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          {data.accounts.map(acc => (
-            <button
-              key={acc.id}
-              onClick={() => handleAccountSwitch(acc)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                selectedAccount?.id === acc.id
-                  ? 'bg-pink-600/20 border-pink-600/50 text-pink-400'
-                  : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
-              }`}
-            >
-              {acc.store_name || acc.account_name}
-            </button>
-          ))}
+          {data.accounts.map(acc => {
+            const isConnected = acc.login_status === 'connected';
+            return (
+              <button
+                key={acc.id}
+                onClick={() => handleAccountSwitch(acc)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  selectedAccount?.id === acc.id
+                    ? 'bg-pink-600/20 border-pink-600/50 text-pink-400'
+                    : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
+                }`}
+              >
+                {isConnected
+                  ? <Wifi size={11} className="text-green-400" />
+                  : <WifiOff size={11} className="text-gray-600" />}
+                {acc.store_name || acc.account_name}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -162,7 +169,12 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-white font-semibold text-sm">Revenue (Last 7 Days)</h3>
-                <span className="text-xs text-gray-500">{selectedAccount?.store_name || selectedAccount?.account_name}</span>
+                <div className="flex items-center gap-2">
+                  {accountData.is_live
+                    ? <span className="flex items-center gap-1 text-xs text-green-400"><Wifi size={11} /> Live</span>
+                    : <span className="flex items-center gap-1 text-xs text-gray-500"><WifiOff size={11} /> Demo</span>}
+                  <span className="text-xs text-gray-600">{selectedAccount?.store_name || selectedAccount?.account_name}</span>
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={accountData.revenue_chart}>
