@@ -129,7 +129,7 @@ export default function ProductsPage() {
               key={s}
               onClick={() => { setStatusFilter(s); setPage(1); }}
               className={`px-3 py-1 rounded-md text-xs font-medium transition-colors capitalize ${
-                statusFilter === s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-700'
+                statusFilter === s ? 'bg-[#f43397] text-white' : 'text-gray-400 hover:text-gray-700'
               }`}
             >
               {s}
@@ -147,7 +147,7 @@ export default function ProductsPage() {
               onClick={() => { setCategoryFilter(c.name); setPage(1); }}
               className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs transition-colors ${
                 categoryFilter === c.name
-                  ? 'bg-pink-50 border-pink-200 text-pink-600'
+                  ? 'bg-[#fef0f7] border-[#f9c4e7] text-[#f43397]'
                   : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
               }`}
             >
@@ -181,7 +181,7 @@ export default function ProductsPage() {
               <div className="space-y-1">
                 <p className="text-white text-sm font-medium leading-snug line-clamp-2">{product.name}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full">{product.category}</span>
+                  <span className="text-xs text-[#f43397] bg-[#fef0f7] px-2 py-0.5 rounded-full">{product.category}</span>
                   <div className="flex items-center gap-1 text-yellow-400">
                     <Star size={11} fill="currentColor" />
                     <span className="text-xs">{product.rating}</span>

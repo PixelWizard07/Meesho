@@ -8,8 +8,8 @@ function Section({ icon: Icon, title, children }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5">
       <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-200">
-        <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
-          <Icon size={16} className="text-pink-500" />
+        <div className="w-8 h-8 bg-[#fef0f7] rounded-lg flex items-center justify-center">
+          <Icon size={16} className="text-[#f43397]" />
         </div>
         <h3 className="text-gray-900 font-semibold">{title}</h3>
       </div>
@@ -68,7 +68,7 @@ export default function SettingsPage() {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Role</label>
             <div className="flex items-center gap-2">
-              <span className="badge bg-pink-100 text-pink-600 capitalize">{user?.role}</span>
+              <span className="badge bg-[#fce4f3] text-[#f43397] capitalize">{user?.role}</span>
             </div>
           </div>
         </div>

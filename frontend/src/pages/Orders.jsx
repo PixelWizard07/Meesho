@@ -120,7 +120,7 @@ export default function OrdersPage() {
         <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 overflow-x-auto">
           {STATUS_OPTS.map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${statusFilter===s ? 'bg-[#f43397] text-white' : 'text-gray-400 hover:text-gray-700'}`}>
               {s === 'all' ? 'All' : s}
             </button>
           ))}

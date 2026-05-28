@@ -45,8 +45,8 @@ function ConnectPasswordModal({ account, onClose, onDone }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
       <div className="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <div className="w-12 h-12 bg-pink-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-          <Lock size={22} className="text-pink-500"/>
+        <div className="w-12 h-12 bg-[#fef0f7] rounded-xl flex items-center justify-center mx-auto mb-4">
+          <Lock size={22} className="text-[#f43397]"/>
         </div>
         <h3 className="text-lg font-bold text-gray-900 text-center mb-1">Connect Account</h3>
         <p className="text-gray-500 text-sm text-center mb-5">{account.account_name}</p>
@@ -90,7 +90,7 @@ function AccountCard({ account, onDelete, onEdit, onConnect, onDisconnect }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-200">
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#f9c4e7] transition-all duration-200">
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ function AccountCard({ account, onDelete, onEdit, onConnect, onDisconnect }) {
           {expanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>} Stats
         </button>
         {!isConnected && (
-          <button onClick={() => onConnect(account)} className="flex items-center gap-1 text-xs text-pink-600 hover:text-pink-700 px-2 py-1.5 rounded-lg hover:bg-pink-50 transition-colors font-semibold">
+          <button onClick={() => onConnect(account)} className="flex items-center gap-1 text-xs text-[#f43397] hover:text-[#c0007b] px-2 py-1.5 rounded-lg hover:bg-[#fef0f7] transition-colors font-semibold">
             <LogIn size={12}/> Connect
           </button>
         )}
@@ -242,8 +242,8 @@ export default function AccountsPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{[...Array(3)].map((_,i)=><div key={i} className="h-52 bg-white rounded-2xl border border-gray-200 animate-pulse shadow-sm"/>)}</div>
       ) : accounts.length === 0 ? (
         <div className="text-center py-16 bg-white border border-gray-200 rounded-2xl shadow-sm">
-          <div className="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Store size={30} className="text-pink-400"/>
+          <div className="w-16 h-16 bg-[#fef0f7] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Store size={30} className="text-[#f43397]"/>
           </div>
           <h3 className="text-gray-900 font-bold mb-2">No accounts yet</h3>
           <p className="text-gray-500 text-sm mb-5">Add your Meesho supplier email to get started</p>
