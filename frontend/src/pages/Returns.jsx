@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, Search, Eye, CheckCircle, XCircle, KeyRound, Clock, AlertCircle } from 'lucide-react';
+import { RefreshCw, Search, Eye, CheckCircle, XCircle, KeyRound, Clock, AlertCircle, Package } from 'lucide-react';
 import { returnsAPI, accountsAPI } from '../api/api';
 import toast from 'react-hot-toast';
 
@@ -13,6 +13,21 @@ const statusStyle = {
   'Refund Completed' : 'bg-green-100 text-green-700',
   'Return Rejected'  : 'bg-red-100 text-red-700',
 };
+
+function productColor(name = '') {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  const p = [
+    ['from-pink-50 to-rose-100','text-pink-400'],
+    ['from-blue-50 to-indigo-100','text-blue-400'],
+    ['from-purple-50 to-violet-100','text-purple-400'],
+    ['from-emerald-50 to-teal-100','text-emerald-400'],
+    ['from-amber-50 to-orange-100','text-amber-400'],
+    ['from-cyan-50 to-sky-100','text-cyan-400'],
+  ];
+  const [bg, icon] = p[Math.abs(h) % p.length];
+  return { bg, icon };
+}
 
 function OTPModal({ ret, onClose }) {
   const [otp, setOtp]       = useState(null);
@@ -36,7 +51,7 @@ function OTPModal({ ret, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
       <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
         <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={24} className="text-blue-500"/></div>
-        <h3 className="text-lg font-semibold text-white mb-1">Return OTP</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Return OTP</h3>
         <p className="text-gray-500 text-sm mb-5">{ret.product_name}</p>
         {loading ? (
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"/>
@@ -59,6 +74,7 @@ function OTPModal({ ret, onClose }) {
 function DetailModal({ ret, onClose, onAccept, onReject }) {
   const [reason, setReason] = useState('');
   const [acting, setActing] = useState('');
+  const { bg, icon } = productColor(ret.product_name);
 
   const act = async (fn, label) => {
     setActing(label);
@@ -71,8 +87,18 @@ function DetailModal({ ret, onClose, onAccept, onReject }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
-      <div className="bg-white border border-gray-300 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-white mb-5">Return Details</h3>
+      <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+        {ret.images && ret.images.length > 0 ? (
+          <div className="flex gap-2 p-4 bg-gray-50 rounded-t-2xl overflow-x-auto">
+            {ret.images.map((img, i) => <img key={i} src={img} alt="" className="w-24 h-24 rounded-lg object-cover flex-shrink-0"/>)}
+          </div>
+        ) : (
+          <div className={`w-full h-32 bg-gradient-to-br ${bg} flex items-center justify-center rounded-t-2xl`}>
+            <Package size={40} className={icon}/>
+          </div>
+        )}
+        <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-5">Return Details</h3>
         <div className="space-y-3 text-sm">
           {[['Return ID',ret.return_id],['Order ID',ret.order_id],['Product',ret.product_name],['Customer',ret.customer_name],['Phone',ret.customer_phone||'—'],['Amount',`₹${(ret.amount||0).toLocaleString('en-IN')}`],['Reason',ret.reason||'—'],['Date',new Date(ret.return_date).toLocaleString('en-IN')],['Account',ret.account_name]].map(([l,v])=>(
             <div key={l} className="flex justify-between border-b border-gray-200 pb-2">
@@ -100,6 +126,7 @@ function DetailModal({ ret, onClose, onAccept, onReject }) {
           </div>
         )}
         <button onClick={onClose} className="btn-secondary w-full mt-3 text-sm">Close</button>
+        </div>
       </div>
     </div>
   );

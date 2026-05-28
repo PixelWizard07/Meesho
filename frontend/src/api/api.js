@@ -41,6 +41,7 @@ export const ordersAPI = {
   cancel       : (id, d)        => api.post(`/orders/${id}/cancel`, d),
   dispatch     : (id, d)        => api.post(`/orders/${id}/dispatch`, d),
   labelUrl     : (subOrderId, accountId) => `/api/orders/${subOrderId}/label?account_id=${accountId}`,
+  skuSummary   : p              => api.get('/orders/sku-summary', { params: p }),
 };
 
 export const returnsAPI = {

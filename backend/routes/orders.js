@@ -115,6 +115,40 @@ router.post('/:subOrderId/dispatch', authenticateToken, async (req, res) => {
   res.json({ message:'Order dispatched', live });
 });
 
+/* ── GET /api/orders/sku-summary ─── */
+router.get('/sku-summary', authenticateToken, async (req, res) => {
+  const { status } = req.query;
+  const accounts = db.prepare(`SELECT * FROM meesho_accounts WHERE panel_user_id=? AND status='active'`).all(req.user.id);
+  let all = [];
+  for (const a of accounts) { const o = await fetchOrders(a); all.push(...o); }
+
+  if (status && status !== 'all') {
+    all = all.filter(o => o.status === status);
+  } else if (!status) {
+    all = all.filter(o => ['Accepted', 'Label Generated'].includes(o.status));
+  }
+
+  const skuMap = {};
+  for (const o of all) {
+    const key = o.sku || o.product_name;
+    if (!skuMap[key]) skuMap[key] = { sku: o.sku || '', product_name: o.product_name, total_orders: 0, total_qty: 0, accounts: {}, orders: [] };
+    skuMap[key].total_orders++;
+    skuMap[key].total_qty += (o.quantity || 1);
+    if (!skuMap[key].accounts[o.account_id]) {
+      skuMap[key].accounts[o.account_id] = { account_id: o.account_id, account_name: o.account_name, qty: 0, orders: [] };
+    }
+    skuMap[key].accounts[o.account_id].qty += (o.quantity || 1);
+    skuMap[key].accounts[o.account_id].orders.push(o);
+    skuMap[key].orders.push(o);
+  }
+
+  const skus = Object.values(skuMap)
+    .map(s => ({ ...s, accounts: Object.values(s.accounts) }))
+    .sort((a, b) => b.total_orders - a.total_orders);
+
+  res.json({ skus, total: skus.length });
+});
+
 /* ── Download / generate shipping label ─── */
 router.get('/:subOrderId/label', authenticateToken, async (req, res) => {
   const { account_id } = req.query;
